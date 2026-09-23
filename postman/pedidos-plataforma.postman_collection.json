@@ -1,0 +1,273 @@
+{
+  "info": {
+    "name": "pedidos-plataforma",
+    "description": "Plataforma de Pedidos e Pagamentos. Ordem: 0 -> 1 -> 2 -> 3 -> 3b (aguarde ~10s p/ processamento async) -> 4 -> A1 -> novo pedido -> 4 -> 5. Base URLs em variaveis da collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseEstoque",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "basePedido",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "basePagamento",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "clienteId",
+      "value": "demo"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "produtoId",
+      "value": ""
+    },
+    {
+      "key": "pedidoId",
+      "value": ""
+    },
+    {
+      "key": "pedidoRecusadoId",
+      "value": ""
+    },
+    {
+      "key": "dlqEventId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Obter token",
+      "request": {
+        "method": "POST",
+        "url": "{{basePedido}}/auth/token",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"clienteId\":\"{{clienteId}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 + token', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var j = pm.response.json();",
+              "    pm.expect(j.token).to.be.a('string');",
+              "    pm.collectionVariables.set('token', j.token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Listar produtos",
+      "request": {
+        "method": "GET",
+        "url": "{{baseEstoque}}/produtos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 + lista nao vazia + guarda produtoId', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var lista = pm.response.json();",
+              "    pm.expect(lista).to.be.an('array').with.lengthOf.at.least(1);",
+              "    pm.collectionVariables.set('produtoId', lista[0].id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Criar pedido (caminho feliz)",
+      "request": {
+        "method": "POST",
+        "url": "{{basePedido}}/pedidos",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"itens\":[{\"produtoId\":\"{{produtoId}}\",\"quantidade\":1,\"precoUnitario\":100.00}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 + AGUARDANDO_PAGAMENTO', function () {",
+              "    pm.response.to.have.status(201);",
+              "    var p = pm.response.json();",
+              "    pm.expect(p.status).to.eql('AGUARDANDO_PAGAMENTO');",
+              "    pm.collectionVariables.set('pedidoId', p.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Criar pedido com pagamento recusado",
+      "request": {
+        "method": "POST",
+        "url": "{{basePedido}}/pedidos",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"itens\":[{\"produtoId\":\"{{produtoId}}\",\"quantidade\":1,\"precoUnitario\":199.99}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('201 + guarda id do pedido recusado', function () {",
+              "    pm.response.to.have.status(201);",
+              "    pm.collectionVariables.set('pedidoRecusadoId', pm.response.json().id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3b. Verificar recusa liberou estoque (teste automatizado)",
+      "request": {
+        "method": "GET",
+        "url": "{{basePedido}}/pedidos/{{pedidoRecusadoId}}",
+        "description": "Polling ate RECUSADO (processamento async ~segundos) e depois confere via estoque que a reserva foi desfeita (quantidadeReservada == 0).",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var pedidoUrl = pm.variables.replaceIn('{{basePedido}}/pedidos/{{pedidoRecusadoId}}');",
+              "var produtoUrl = pm.variables.replaceIn('{{baseEstoque}}/produtos/{{produtoId}}');",
+              "var headers = { Authorization: 'Bearer ' + pm.collectionVariables.get('token') };",
+              "function tentar(n) {",
+              "    pm.sendRequest({ url: pedidoUrl, method: 'GET', header: headers }, function (err, res) {",
+              "        var st = res.json().status;",
+              "        if (st === 'RECUSADO' || n <= 0) {",
+              "            pm.test('pedido foi RECUSADO', function () { pm.expect(st).to.eql('RECUSADO'); });",
+              "            pm.sendRequest(produtoUrl, function (e2, r2) {",
+              "                pm.test('estoque liberado (reservada == 0)', function () {",
+              "                    pm.expect(r2.json().quantidadeReservada).to.eql(0);",
+              "                });",
+              "            });",
+              "        } else { setTimeout(function () { tentar(n - 1); }, 3000); }",
+              "    });",
+              "}",
+              "tentar(10);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Consultar DLQ de pagamento",
+      "request": {
+        "method": "GET",
+        "url": "{{basePagamento}}/pagamentos/dlq"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200 + lista (guarda 1o PENDENTE p/ o passo 5)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    var lista = pm.response.json();",
+              "    pm.expect(lista).to.be.an('array');",
+              "    var pend = lista.find(function (d) { return d.status === 'PENDENTE'; });",
+              "    if (pend) { pm.collectionVariables.set('dlqEventId', pend.eventId); }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Reprocessar mensagem da DLQ",
+      "request": {
+        "method": "POST",
+        "url": "{{basePagamento}}/pagamentos/dlq/{{dlqEventId}}/reprocessar",
+        "description": "Requer dlqEventId PENDENTE (passo 4 ou fluxo A1). Apos sucesso a DLQ fica REPROCESSADO."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('reprocessado (APROVADO ou RECUSADO, nunca DLQ)', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.json().status).to.be.oneOf(['APROVADO', 'RECUSADO']);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "A1. Admin DEV: forcar proximas N falhas do gateway",
+      "request": {
+        "method": "POST",
+        "url": "{{basePagamento}}/pagamentos/admin/gateway/falhar-proximas?n=3",
+        "description": "DEV-ONLY: faz as proximas 3 cobranças falharem (transitoria) para encher a DLQ de verdade. Depois crie um pedido (passo 2) e consulte a DLQ (passo 4)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

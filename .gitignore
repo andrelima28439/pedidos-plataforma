@@ -1,0 +1,28 @@
+# Segredos / ambiente local (nunca commitar)
+.env
+*.env
+!.env.example
+
+# Build Java
+target/
+*.class
+*.jar
+!**/src/**/*.jar
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Logs
+*.log
+logs/
+
+# IDE / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.swp

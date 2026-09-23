@@ -1,0 +1,41 @@
+{
+  "uid": "pedidos-plataforma",
+  "title": "Pedidos Plataforma",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Pedidos por status",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "pedidos_por_status", "legendFormat": "{{status}}" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Retry de pagamento (taxa 5m)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "rate(pagamento_retry_total[5m])", "legendFormat": "retries/s" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "DLQ pagamento ao longo do tempo",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "refId": "A", "expr": "pagamento_dlq_pendente", "legendFormat": "pendente" },
+        { "refId": "B", "expr": "pagamento_total_24h", "legendFormat": "total 24h" },
+        { "refId": "C", "expr": "pagamento_com_retry_24h", "legendFormat": "com retry 24h" }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+    }
+  ]
+}

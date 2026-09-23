@@ -1,0 +1,43 @@
+﻿server:
+  port: 8082
+
+spring:
+  application:
+    name: pedido-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pedidos}
+    username: ${POSTGRES_USER:pedidos}
+    password: ${POSTGRES_PASSWORD:pedidos123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: pedido-service
+      auto-offset-reset: earliest
+
+kafka:
+  topicos:
+    pedido-criado: pedido.criado
+    pagamento-aprovado: pagamento.aprovado
+    pagamento-recusado: pagamento.recusado
+
+estoque:
+  url: ${ESTOQUE_URL:http://localhost:8081}
+
+jwt:
+  secret: ${JWT_SECRET:dev-only-change-me-32chars-minimo-123456}
+  expiracao-ms: 86400000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+

@@ -1,0 +1,22 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, Segoe UI, Roboto, sans-serif; margin: 0; color: #222; background: #fafafa; }
+header { display: flex; gap: 1rem; align-items: center; padding: 0.75rem 1rem; background: #111; color: #fff; flex-wrap: wrap; }
+header h1 { font-size: 1.1rem; margin: 0 1rem 0 0; }
+header nav { display: flex; gap: 0.75rem; }
+header nav a { color: #9fd; text-decoration: none; }
+header .login { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.status { font-weight: bold; }
+.status.PAGO { color: green; }
+.status.RECUSADO { color: crimson; }
+.status.AGUARDANDO_PAGAMENTO { color: darkorange; }
+.erro { color: crimson; }
+.ok { color: green; }
+.paginacao { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+button { cursor: pointer; padding: 0.35rem 0.7rem; }
+input { padding: 0.35rem 0.5rem; }
+@media (max-width: 700px) { header { font-size: 0.9rem; } }

@@ -1,0 +1,24 @@
+﻿server:
+  port: 8081
+
+spring:
+  application:
+    name: estoque-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/estoque}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+

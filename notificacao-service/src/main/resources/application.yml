@@ -1,0 +1,38 @@
+﻿server:
+  port: 8084
+
+spring:
+  application:
+    name: notificacao-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pedidos}
+    username: ${POSTGRES_USER:pedidos}
+    password: ${POSTGRES_PASSWORD:pedidos123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: notificacao-service
+      auto-offset-reset: earliest
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+
+kafka:
+  topicos:
+    pedido-criado: pedido.criado
+    pagamento-aprovado: pagamento.aprovado
+    pagamento-recusado: pagamento.recusado
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+

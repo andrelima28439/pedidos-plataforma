@@ -1,0 +1,45 @@
+﻿server:
+  port: 8083
+
+spring:
+  application:
+    name: pagamento-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/pedidos}
+    username: ${POSTGRES_USER:pedidos}
+    password: ${POSTGRES_PASSWORD:pedidos123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: pagamento-service
+      auto-offset-reset: earliest
+
+kafka:
+  topicos:
+    pedido-criado: pedido.criado
+    pagamento-aprovado: pagamento.aprovado
+    pagamento-recusado: pagamento.recusado
+    pagamento-dlq: pagamento.dlq
+
+pagamento:
+  max-tentativas: 3
+  backoff-base-ms: 50
+
+aws:
+  endpoint: ${AWS_ENDPOINT:http://localhost:4566}
+  region: ${AWS_REGION:us-east-1}
+  s3:
+    bucket: ${S3_COMPROVANTES_BUCKET:comprovantes-pagamentos}
+  alto-valor-limite: 1000.00
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+
